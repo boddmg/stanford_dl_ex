@@ -14,7 +14,7 @@ function stack = params2stack(params, ei)
 
 % Map the params (a vector into a stack of weights)
 depth = numel(ei.layer_sizes);
-stack = cell(depth,1);
+stack = cell(depth,1); % swap the 1 and the depth ? 
 % the size of the previous layer
 prev_size = ei.input_dim; 
 % mark current position in parameter vector
@@ -37,7 +37,7 @@ for d = 1:depth
     
     % Set previous layer size
     prev_size = hidden;
-    
+
 end
 
 end
