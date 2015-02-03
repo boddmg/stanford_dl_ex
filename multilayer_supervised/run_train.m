@@ -41,6 +41,7 @@ options = [];
 options.display = 'iter';
 options.maxFunEvals = 1e6;
 options.Method = 'lbfgs';
+options.MaxIter = 1;
 
 %% run training
 [opt_params,opt_value,exitflag,output] = minFunc(@supervised_dnn_cost,...
