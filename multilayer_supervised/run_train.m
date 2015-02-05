@@ -1,4 +1,4 @@
-% runs training procedure for supervised multilayer network
+ % runs training procedure for supervised multilayer network
 % softmax output layer with cross entropy loss function
 
 %% setup environment

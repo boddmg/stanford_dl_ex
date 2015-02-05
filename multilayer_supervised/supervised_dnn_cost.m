@@ -26,12 +26,13 @@ fprintf('stack{1}.W size:%d,%d\r\n',size(stack{1}.W,1),size(stack{1}.W,2));
 fprintf('stack{1}.b size:%d,%d\r\n',size(stack{1}.b,1),size(stack{1}.b,2));
 fprintf('stack{2}.W size:%d,%d\r\n',size(stack{2}.W,1),size(stack{2}.W,2));
 fprintf('stack{2}.b size:%d,%d\r\n',size(stack{2}.b,1),size(stack{2}.b,2));
-last_output = [data];
+last_output = cell(numHidden+2,1);
+last_output{1} = data;
 for i=1:(numHidden+1)
-    temp_output = stack{i}.W * last_output(:,:,i);
+    temp_output = stack{i}.W * last_output{i};
     temp_output = temp_output + repmat(stack{i}.b, 1, data_samples);
     if ei.activation_fun == 'logistic'
-        last_output(:,:,i+1) = 1./(1+exp(temp_output));
+        last_output{i+1} = 1./(1+exp(temp_output));
     end
 end
 forward_prop_output = last_output;
@@ -46,14 +47,14 @@ end;
 
 %% compute cost
 %%% YOUR CODE HERE %%%
-[k,p] = x_y_to_k_p(forward_prop_output(:,:,numHidden+1),labels');
+[k,p] = x_y_to_k_p(forward_prop_output{numHidden+2},labels');
 cost = sum(sum(k .* log(p)));
 %ceCost = forward_prop_output
 
 %% compute gradients using backpropagation
 %%% YOUR CODE HERE %%%
 gradStack = initialize_weights(ei);
-last_x = forward_prop_output(:,:,numHidden+1);
+last_x = forward_prop_output{numHidden+2};
 last_y = labels';
 for i=1:(numHidden+1)
     layer = numHidden+2-i;
