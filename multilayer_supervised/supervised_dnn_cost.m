@@ -62,7 +62,7 @@ delta{layer} = -(k-p);
 
 for l=(nl-1):-1:2
     layer = layer - 1;
-    delta{l} = (stack{l}.W' * delta{l+1}) .* forward_prop_output{l} .* (1-forward_prop_output{l});
+    delta{l} = (stack{l}.W' * delta{l+1}) .* df(forward_prop_output{l},ei);
 end
 
 for l=1:(numHidden+1)
@@ -103,14 +103,14 @@ function A = f(Z, ei)
     end
 end
 
-function A = fderivative(Z, ei)
+function y = df(f, ei)
     switch ei.activation_fun
         case 'logistic'
-            A = 1 ./ (1+exp(-Z));
+            y = f .* (1-f);
         case 'tanh'
-            A = tanh(Z);
+            fp = 1 - f.^2;
         otherwise
-            A = Z;
+            assert(false, 'Not choose a activation function.');
     end
 end
 
