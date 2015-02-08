@@ -72,11 +72,12 @@ activations = zeros(convDim,convDim,numFilters,numImages);
 activationsPooled = zeros(outputDim,outputDim,numFilters,numImages);
 
 %%% YOUR CODE HERE %%%
+activations = cnnConvolve(filterDim, numFilters, images, Wc, bc);
+activationsPooled = cnnPool(poolDim, activations);
 
 % Reshape activations into 2-d matrix, hiddenSize x numImages,
 % for Softmax layer
 activationsPooled = reshape(activationsPooled,[],numImages);
-
 %% Softmax Layer
 %  Forward propagate the pooled activations calculated above into a
 %  standard softmax layer. For your convenience we have reshaped
@@ -88,6 +89,9 @@ activationsPooled = reshape(activationsPooled,[],numImages);
 probs = zeros(numClasses,numImages);
 
 %%% YOUR CODE HERE %%%
+probs = calcSoftmaxProbability(Wd * activationsPooled + repmat(bd,1,numImages));
+
+assert(isequal(size(probs), [numClasses,numImages]));
 
 %%======================================================================
 %% STEP 1b: Calculate Cost
@@ -98,6 +102,8 @@ probs = zeros(numClasses,numImages);
 cost = 0; % save objective into cost
 
 %%% YOUR CODE HERE %%%
+
+cost = calcCost(probs, labels);
 
 % Makes predictions given probs and returns without backproagating errors.
 if pred
@@ -118,7 +124,27 @@ end;
 %  quickly.
 
 %%% YOUR CODE HERE %%%
+delta = cell(2,1);
 
+% The softmax layer errors. 
+k = calcLabelsMatrix(labels, size(probs,1));
+delta_softmax = probs - k;
+
+% The convolutional and subsampling layer errors.
+delta_subsampling = Wd' * delta_softmax;
+
+delta_subsampling = reshape(delta_subsampling, ...
+    outputDim,outputDim,numFilters,numImages);
+
+delta_convolutioned = zeros(convDim, convDim, numFilters, numImages);
+for imageNum = 1:numImages
+    for filterNum = 1:numFilters
+        delta_convolutioned(:, :, filterNum, imageNum) = ...
+            kron(delta_subsampling(:, :, filterNum, imageNum), ...
+            ones(poolDim, poolDim)) / poolDim^2;
+    end
+end
+delta_convolutioned = delta_convolutioned .* df(activations);
 %%======================================================================
 %% STEP 1d: Gradient Calculation
 %  After backpropagating the errors above, we can use them to calculate the
@@ -128,8 +154,55 @@ end;
 %  for that filter with each image and aggregate over images.
 
 %%% YOUR CODE HERE %%%
+bd_grad = mean(delta_softmax,2);
+
+Wd_grad = delta_softmax * activationsPooled' / numImages;
+
+bc_grad = reshape(sum(sum(sum(delta_convolutioned,4),1),2),size(bc_grad))...
+    /numImages;
+
+for filterNum = 1:numFilters
+    Wc_grad(:,:,filterNum) = zeros(filterDim);
+    for imageNum = 1:numImages
+        Wc_grad(:,:,filterNum) = Wc_grad(:,:,filterNum)+...
+            conv2(images(:,:,imageNum),rot90(...
+            squeeze(delta_convolutioned(:,:,filterNum,imageNum)),2),'vaild');
+    end
+    Wc_grad(:,:,filterNum) = Wc_grad(:,:,filterNum) / numImages;
+end
+assert(isequal(size(bc_grad), size(bc)));
+assert(isequal(size(bd_grad), size(bd)));
+assert(isequal(size(Wc_grad), size(Wc)));
+assert(isequal(size(Wd_grad), size(Wd)));
 
 %% Unroll gradient into grad vector for minFunc
 grad = [Wc_grad(:) ; Wd_grad(:) ; bc_grad(:) ; bd_grad(:)];
 
+end
+
+function probs = calcSoftmaxProbability(input)
+    numClasses = size(input,1);
+    probs = exp(input);
+    probs = probs ./ repmat(sum(probs,1), numClasses, 1);
+end
+
+function labels_matrix = calcLabelsMatrix(labels,numClasses)
+    numSamples = size(labels,1);
+    k = repmat( [1:numClasses]' , 1, numSamples);
+    k = bsxfun(@eq, k, repmat(labels',numClasses,1));
+    labels_matrix = k;
+end
+
+function cost = calcCost(probs, labels)
+    numClasses = size(probs,1);
+    numSamples = size(labels,1);
+    assert(isequal(size(probs, 2), size(labels, 1)));
+    
+    k = calcLabelsMatrix(labels, numClasses);
+    
+    cost = - mean(sum((k .* log(probs) )));
+end
+
+function y = df(f)
+    y = f .* (1-f);
 end
