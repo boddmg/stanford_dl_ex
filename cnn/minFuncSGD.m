@@ -41,6 +41,7 @@ velocity = zeros(size(theta));
 %%======================================================================
 %% SGD loop
 it = 0;
+gamma = 0.5;
 for e = 1:epochs
     
     % randomly permute indices of data for quick minibatch sampling
@@ -67,11 +68,16 @@ for e = 1:epochs
         % sgd update rule
         
         %%% YOUR CODE HERE %%%
+        velocity = mom*velocity + alpha*grad;
+%         velocity = alpha*grad*cost;
+        theta = theta - velocity;
         
         fprintf('Epoch %d: Cost on iteration %d is %f\n',e,it,cost);
     end;
 
     % aneal learning rate by factor of two after each epoch
+    gamma = gamma + 0.1;
+    gamma = max(gamma,1);
     alpha = alpha/2.0;
 
 end;
