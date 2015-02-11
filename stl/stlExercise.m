@@ -86,21 +86,25 @@ opttheta = randTheta;
 %  You will need to whitened the patches with the zca2 function 
 %  then call minFunc with the softICACost function as seen in the RICA exercise.
 %%% YOUR CODE HERE %%%
+[patches, V] = zca2(patches);
+[opttheta, ~, ~] = minFunc( @(theta) softICACost(theta, patches, params), randTheta, options); 
+
 
 % reshape visualize weights
 W = reshape(opttheta, params.numFeatures, params.n);
 display_network(W');
-
+W_temp = W;
 %% ======================================================================
 
 %% STEP 3: Extract Features from the Supervised Dataset
 % pre-multiply the weights with whitening matrix, equivalent to whitening
 % each image patch before applying convolution. V should be the same V
 % returned by the zca2 when you whiten the patches.
-W = W*V;
+V = W*V;
 %  reshape RICA weights to be convolutional weights.
 W = reshape(W, params.numFeatures, params.patchWidth, params.patchWidth);
 W = permute(W, [2,3,1]);
+
 
 %  setting up convolutional feed-forward. You do need to modify this code.
 filterDim = params.patchWidth;
@@ -134,6 +138,8 @@ options.MaxIter = 300;
 
 % optimize
 %%% YOUR CODE HERE %%%
+randTheta2=minFunc(@softmax_regression_vec, randTheta2(:),...
+    options, trainFeatures, trainLabels);
 
 
 %%======================================================================
@@ -141,6 +147,9 @@ options.MaxIter = 300;
 % Compute Predictions on tran and test sets using softmaxPredict
 % and softmaxModel
 %%% YOUR CODE HERE %%%
+randTheta2 = reshape(randTheta2, numClasses, featureSize);
+[~, train_pred] = max(randTheta2*trainFeatures, [], 1);
+[~, pred] = max(randTheta2*testFeatures, [], 1);
 % Classification Score
 fprintf('Train Accuracy: %f%%\n', 100*mean(train_pred(:) == trainLabels(:)));
 fprintf('Test Accuracy: %f%%\n', 100*mean(pred(:) == testLabels(:)));

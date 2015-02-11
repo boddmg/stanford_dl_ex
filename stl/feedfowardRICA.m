@@ -55,14 +55,19 @@ for imageNum = 1:numImages
     % Convolve "filter" with "im" to find "resp"
     % be sure to do a 'valid' convolution
     %%% YOUR CODE HERE %%%
+    resp = conv2(im,filter,'valid');
+    resp = sigmoid(resp);
     % Then, apply square-square-root pooling on "resp" to get the hidden
     % activation "act"
     act = zeros(convDim / poolDim, convDim / poolDim); % You should replace this
     %%% YOUR CODE HERE %%%
+    resp = resp .^ 2;
+    temp_act = conv2(resp,ones(poolDim,poolDim),'valid');
+    act = temp_act(1:poolDim:size(temp_act,1),1:poolDim:size(temp_act,2));
+    act = sqrt(act  + params.epsilon);
     features(:, :, filterNum, imageNum) = act;
   end
 end
-
 
 end
 
